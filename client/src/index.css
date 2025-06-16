@@ -1,3 +1,5 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -82,9 +84,6 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 }
-
-/* FontAwesome integration for icons */
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 /* Custom scrollbar for chat */
 .overflow-y-auto::-webkit-scrollbar {

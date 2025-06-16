@@ -18,7 +18,7 @@ import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create a demo user for development
-  let demoUser;
+  let demoUser: any = null;
   try {
     demoUser = await storage.getUserByUsername("demo");
     if (!demoUser) {
@@ -202,11 +202,11 @@ async function processFileAsync(prescriptionId: string, fileBuffer: Buffer, mime
     await storage.updatePrescriptionProcessingStatus(prescriptionId, "completed", {
       doctorName: extractedData.doctorName,
       hospitalClinic: extractedData.hospitalClinic,
-      consultationDate: extractedData.consultationDate ? new Date(extractedData.consultationDate) : null,
+      consultationDate: extractedData.consultationDate || null,
       patientName: extractedData.patientName,
       diagnosis: extractedData.diagnosis,
       vitalSigns: extractedData.vitalSigns,
-      followUpDate: extractedData.followUpDate ? new Date(extractedData.followUpDate) : null,
+      followUpDate: extractedData.followUpDate || null,
       specialInstructions: extractedData.specialInstructions,
       prescriptionNumber: extractedData.prescriptionNumber,
       extractionConfidence: confidence

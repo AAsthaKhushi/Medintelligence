@@ -174,32 +174,39 @@ export class DatabaseStorage implements IStorage {
     threshold: number = 0.7, 
     limit: number = 5
   ): Promise<PrescriptionWithMedicines[]> {
-    const similarPrescriptions = await db.execute(sql`
-      SELECT p.*, 1 - (p.embedding <=> ${JSON.stringify(embedding)}::vector) as similarity_score
-      FROM prescriptions p
-      WHERE p.user_id = ${userId}
-        AND p.processing_status = 'completed'
-        AND p.embedding IS NOT NULL
-        AND 1 - (p.embedding <=> ${JSON.stringify(embedding)}::vector) > ${threshold}
-      ORDER BY p.embedding <=> ${JSON.stringify(embedding)}::vector
-      LIMIT ${limit}
-    `);
+    try {
+      const similarPrescriptions = await db.execute(sql`
+        SELECT p.*, 1 - (p.embedding <=> ${JSON.stringify(embedding)}::vector) as similarity_score
+        FROM prescriptions p
+        WHERE p.user_id = ${userId}
+          AND p.processing_status = 'completed'
+          AND p.embedding IS NOT NULL
+          AND 1 - (p.embedding <=> ${JSON.stringify(embedding)}::vector) > ${threshold}
+        ORDER BY p.embedding <=> ${JSON.stringify(embedding)}::vector
+        LIMIT ${limit}
+      `);
 
-    const prescriptionsWithMedicines = await Promise.all(
-      similarPrescriptions.map(async (prescription: any) => {
-        const prescriptionMedicines = await db
-          .select()
-          .from(medicines)
-          .where(eq(medicines.prescriptionId, prescription.id));
+      const results = Array.isArray(similarPrescriptions) ? similarPrescriptions : [similarPrescriptions];
+      
+      const prescriptionsWithMedicines = await Promise.all(
+        results.map(async (prescription: any) => {
+          const prescriptionMedicines = await db
+            .select()
+            .from(medicines)
+            .where(eq(medicines.prescriptionId, prescription.id));
 
-        return {
-          ...prescription,
-          medicines: prescriptionMedicines,
-        };
-      })
-    );
+          return {
+            ...prescription,
+            medicines: prescriptionMedicines,
+          };
+        })
+      );
 
-    return prescriptionsWithMedicines;
+      return prescriptionsWithMedicines;
+    } catch (error) {
+      console.error('Vector search error:', error);
+      return [];
+    }
   }
 }
 
