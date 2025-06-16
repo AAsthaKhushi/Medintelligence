@@ -6,59 +6,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
 
-const EXTRACTION_SYSTEM_PROMPT = `
-You are MedGenie AI, specialized in extracting structured medical data from prescription documents. 
+const EXTRACTION_SYSTEM_PROMPT = `Extract prescription data from this medical document. Return only valid JSON with this structure:
 
-TASK: Extract prescription information and return ONLY valid JSON format.
-
-REQUIRED JSON STRUCTURE:
 {
-  "doctorName": "Full doctor name with credentials",
-  "hospitalClinic": "Medical facility name", 
-  "consultationDate": "YYYY-MM-DD format",
-  "patientName": "Patient full name",
-  "diagnosis": "Primary medical condition/symptoms",
-  "medicines": [
-    {
-      "name": "Complete medicine name",
-      "genericName": "Generic/salt name if mentioned", 
-      "dosage": "Strength (e.g., 500mg, 10ml)",
-      "frequency": "How often (e.g., twice daily, every 8 hours)",
-      "duration": "Treatment period (e.g., 7 days, 2 weeks)",
-      "instructions": "Special instructions (before/after food, etc.)",
-      "quantity": "Total quantity prescribed"
-    }
-  ],
-  "vitalSigns": {
-    "bloodPressure": "if mentioned",
-    "temperature": "if mentioned", 
-    "weight": "if mentioned",
-    "pulse": "if mentioned"
-  },
-  "followUpDate": "Next appointment date if mentioned",
-  "specialInstructions": "General care instructions",
-  "prescriptionNumber": "Prescription ID if visible"
+  "doctorName": "string",
+  "hospitalClinic": "string",
+  "consultationDate": "YYYY-MM-DD or null",
+  "patientName": "string",
+  "diagnosis": "string",
+  "medicines": [{"name": "string", "dosage": "string", "frequency": "string", "duration": "string", "instructions": "string", "quantity": "string"}],
+  "vitalSigns": {"bloodPressure": "string", "temperature": "string", "weight": "string", "pulse": "string"},
+  "followUpDate": "YYYY-MM-DD or null",
+  "specialInstructions": "string",
+  "prescriptionNumber": "string"
 }
 
-EXTRACTION RULES:
-1. Extract ALL visible text accurately
-2. If handwritten, interpret carefully
-3. For unclear text, use "Not clearly visible" 
-4. Maintain medical terminology precision
-5. Include dosage units (mg, ml, tablets)
-6. Convert frequency to standardized format
-7. Extract both brand and generic names when available
-8. Note any drug interactions mentioned
-9. Include dietary restrictions if specified
-10. Preserve doctor's special notes
-
-QUALITY CHECKS:
-- Verify medicine names against common pharmaceuticals
-- Ensure dosage values are medically reasonable  
-- Cross-reference frequency with standard prescribing
-- Validate date formats
-- Check for completeness of critical fields
-`;
+Use "Not mentioned" for missing fields. Extract text accurately from handwritten prescriptions.`;
 
 const CHAT_SYSTEM_PROMPT = `
 You are MedGenie AI, a knowledgeable medical assistant helping users understand their prescription data. 
@@ -110,7 +73,12 @@ INTERACTION STYLE:
 
 export async function extractPrescriptionData(base64File: string, mimeType: string): Promise<ExtractedPrescriptionData> {
   try {
-    const response = await openai.chat.completions.create({
+    // Add timeout wrapper for OpenAI API call
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('OpenAI API timeout after 30 seconds')), 30000);
+    });
+
+    const apiPromise = openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -134,14 +102,15 @@ export async function extractPrescriptionData(base64File: string, mimeType: stri
           ]
         }
       ],
-      max_tokens: 2000,
+      max_tokens: 1500,
       temperature: 0.1,
       response_format: { type: "json_object" }
     });
 
+    const response = await Promise.race([apiPromise, timeoutPromise]) as any;
     const extractedData = JSON.parse(response.choices[0].message.content || "{}");
     return extractedData as ExtractedPrescriptionData;
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(`Failed to extract prescription data: ${error.message}`);
   }
 }
