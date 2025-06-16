@@ -198,15 +198,28 @@ async function processFileAsync(prescriptionId: string, fileBuffer: Buffer, mime
     // Calculate extraction confidence based on completeness
     const confidence = calculateExtractionConfidence(extractedData);
 
+    // Helper function to parse dates safely
+    const parseDate = (dateStr: string | undefined | null): string | null => {
+      if (!dateStr || dateStr === "Not mentioned" || dateStr === "Not clearly visible" || dateStr === "Not specified") {
+        return null;
+      }
+      try {
+        const parsed = new Date(dateStr);
+        return isNaN(parsed.getTime()) ? null : dateStr;
+      } catch {
+        return null;
+      }
+    };
+
     // Update prescription with extracted data
     await storage.updatePrescriptionProcessingStatus(prescriptionId, "completed", {
       doctorName: extractedData.doctorName,
       hospitalClinic: extractedData.hospitalClinic,
-      consultationDate: extractedData.consultationDate || null,
+      consultationDate: parseDate(extractedData.consultationDate),
       patientName: extractedData.patientName,
       diagnosis: extractedData.diagnosis,
       vitalSigns: extractedData.vitalSigns,
-      followUpDate: extractedData.followUpDate || null,
+      followUpDate: parseDate(extractedData.followUpDate),
       specialInstructions: extractedData.specialInstructions,
       prescriptionNumber: extractedData.prescriptionNumber,
       extractionConfidence: confidence
