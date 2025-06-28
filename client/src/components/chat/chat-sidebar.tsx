@@ -101,6 +101,12 @@ export function ChatSidebar({ selectedPrescriptionId }: ChatSidebarProps) {
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {!selectedPrescriptionId && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4 mb-4 text-center">
+            <i className="fas fa-info-circle mr-2"></i>
+            Please select a prescription from the list to chat with the AI about its details.
+          </div>
+        )}
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -134,7 +140,7 @@ export function ChatSidebar({ selectedPrescriptionId }: ChatSidebarProps) {
             )}
 
             {/* Chat History */}
-            {chatHistory?.map((msg) => (
+            {chatHistory && chatHistory.slice().reverse().map((msg) => (
               <div key={msg.id} className={`flex space-x-3 ${msg.isUserMessage ? 'justify-end' : ''}`}>
                 {msg.isUserMessage ? (
                   <>

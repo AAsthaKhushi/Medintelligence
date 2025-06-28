@@ -34,4 +34,12 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  define: {
+    // Define API base URL for different environments
+    __API_BASE_URL__: JSON.stringify(
+      process.env.NODE_ENV === "production" 
+        ? "/.netlify/functions/api" 
+        : "/api"
+    ),
+  },
 });

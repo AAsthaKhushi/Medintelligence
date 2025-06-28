@@ -66,3 +66,5 @@ replit.nix
 # Other
 *.tgz
 *.tar.gz
+# Local Netlify folder
+.netlify

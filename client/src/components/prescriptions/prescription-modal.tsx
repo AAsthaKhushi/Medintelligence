@@ -8,6 +8,27 @@ interface PrescriptionModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper function to format upload date and time
+const formatUploadDateTime = (createdAt: Date | null | undefined): string => {
+  if (!createdAt) return 'Unknown';
+  
+  const date = createdAt;
+  const now = new Date();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  
+  if (diffInHours < 24) {
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      return `${diffInMinutes} min ago`;
+    }
+    return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString();
+  }
+};
+
 export function PrescriptionModal({ prescription, open, onOpenChange }: PrescriptionModalProps) {
   if (!prescription) return null;
 
@@ -70,15 +91,21 @@ export function PrescriptionModal({ prescription, open, onOpenChange }: Prescrip
                     {prescription.diagnosis || 'Not specified'}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-slate-600">Uploaded</p>
+                  <p className="font-medium text-slate-900">
+                    {prescription.createdAt ? formatUploadDateTime(new Date(prescription.createdAt)) : 'Unknown'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Patient Info */}
-          {prescription.patientName && (
+          {typeof prescription.patientName === 'string' && prescription.patientName && (
             <div className="p-4 bg-slate-50 rounded-lg">
               <h3 className="font-medium text-slate-900 mb-3">Patient Information</h3>
-              <p className="font-medium text-slate-900">{prescription.patientName}</p>
+              <p className="font-medium text-slate-900">{prescription.patientName as string}</p>
             </div>
           )}
 

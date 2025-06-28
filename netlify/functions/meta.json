@@ -1,0 +1,466 @@
+{
+  "inputs": {
+    "shared/schema.ts": {
+      "bytes": 11324,
+      "imports": [
+        {
+          "path": "drizzle-orm/pg-core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-zod",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "zod",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/db.ts": {
+      "bytes": 506,
+      "imports": [
+        {
+          "path": "dotenv/config",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@neondatabase/serverless",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm/neon-serverless",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ws",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "shared/schema.ts",
+          "kind": "import-statement",
+          "original": "@shared/schema"
+        }
+      ],
+      "format": "esm"
+    },
+    "server/storage.ts": {
+      "bytes": 15109,
+      "imports": [
+        {
+          "path": "shared/schema.ts",
+          "kind": "import-statement",
+          "original": "@shared/schema"
+        },
+        {
+          "path": "server/db.ts",
+          "kind": "import-statement",
+          "original": "./db"
+        },
+        {
+          "path": "drizzle-orm",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/services/openai.ts": {
+      "bytes": 11098,
+      "imports": [
+        {
+          "path": "openai",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "mammoth",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pdfjs-dist/legacy/build/pdf.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pdfjs-dist/legacy/build/pdf.worker.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "canvas",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/services/fileProcessor.ts": {
+      "bytes": 1529,
+      "imports": [
+        {
+          "path": "multer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/routes.ts": {
+      "bytes": 22065,
+      "imports": [
+        {
+          "path": "http",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "server/storage.ts",
+          "kind": "import-statement",
+          "original": "./storage"
+        },
+        {
+          "path": "server/services/openai.ts",
+          "kind": "import-statement",
+          "original": "./services/openai"
+        },
+        {
+          "path": "server/services/fileProcessor.ts",
+          "kind": "import-statement",
+          "original": "./services/fileProcessor"
+        },
+        {
+          "path": "@shared/schema",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "zod",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "vite.config.ts": {
+      "bytes": 1186,
+      "imports": [
+        {
+          "path": "vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@vitejs/plugin-react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@replit/vite-plugin-runtime-error-modal",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@replit/vite-plugin-cartographer",
+          "kind": "dynamic-import",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/vite.ts": {
+      "bytes": 2254,
+      "imports": [
+        {
+          "path": "express",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "http",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite.config.ts",
+          "kind": "import-statement",
+          "original": "../vite.config"
+        },
+        {
+          "path": "nanoid",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "server/index.ts": {
+      "bytes": 2040,
+      "imports": [
+        {
+          "path": "express",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "server/routes.ts",
+          "kind": "import-statement",
+          "original": "./routes"
+        },
+        {
+          "path": "server/vite.ts",
+          "kind": "import-statement",
+          "original": "./vite"
+        },
+        {
+          "path": "dotenv/config",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "netlify/functions/index.js": {
+      "imports": [
+        {
+          "path": "express",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "http",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm/pg-core",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-zod",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dotenv/config",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@neondatabase/serverless",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm/neon-serverless",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "ws",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "drizzle-orm",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "openai",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "mammoth",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pdfjs-dist/legacy/build/pdf.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "pdfjs-dist/legacy/build/pdf.worker.js",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "canvas",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "multer",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "express",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "fs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "vite",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@vitejs/plugin-react",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@replit/vite-plugin-runtime-error-modal",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "@replit/vite-plugin-cartographer",
+          "kind": "dynamic-import",
+          "external": true
+        },
+        {
+          "path": "nanoid",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "dotenv/config",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "path",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "server/index.ts",
+      "inputs": {
+        "server/index.ts": {
+          "bytesInOutput": 1491
+        },
+        "server/routes.ts": {
+          "bytesInOutput": 19266
+        },
+        "shared/schema.ts": {
+          "bytesInOutput": 10086
+        },
+        "server/db.ts": {
+          "bytesInOutput": 459
+        },
+        "server/storage.ts": {
+          "bytesInOutput": 10273
+        },
+        "server/services/openai.ts": {
+          "bytesInOutput": 9230
+        },
+        "server/services/fileProcessor.ts": {
+          "bytesInOutput": 1358
+        },
+        "server/vite.ts": {
+          "bytesInOutput": 1985
+        },
+        "vite.config.ts": {
+          "bytesInOutput": 1138
+        }
+      },
+      "bytes": 55719
+    }
+  }
+}

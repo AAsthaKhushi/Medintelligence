@@ -1,7 +1,13 @@
 import OpenAI from "openai";
 import type { ExtractedPrescriptionData } from "@shared/schema";
+import mammoth from "mammoth";
+// @ts-ignore
+import pdfjsLib from "pdfjs-dist/legacy/build/pdf.js";
+// @ts-ignore
+import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.js";
+// @ts-ignore
+import { createCanvas, CanvasRenderingContext2D } from "canvas";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
@@ -71,14 +77,59 @@ INTERACTION STYLE:
 - Encouraging of doctor-patient communication
 `;
 
-export async function extractPrescriptionData(base64File: string, mimeType: string): Promise<ExtractedPrescriptionData> {
-  try {
-    // Add timeout wrapper for OpenAI API call
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('OpenAI API timeout after 30 seconds')), 30000);
-    });
+// Helper: Convert DOCX buffer to PNG (via HTML -> Canvas)
+async function docxBufferToPngBase64(docxBuffer: Buffer): Promise<string> {
+  const { value: html } = await mammoth.convertToHtml({ buffer: docxBuffer });
+  // Render HTML to canvas (node-canvas)
+  const canvas = createCanvas(1200, 1600);
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, 1200, 1600);
+  ctx.fillStyle = "#000";
+  ctx.font = "24px Arial";
+  // Render plain text (strip HTML tags)
+  const text = html.replace(/<[^>]+>/g, '');
+  const lines = text.split(/\r?\n/);
+  let y = 100;
+  for (const line of lines) {
+    ctx.fillText(line, 50, y, 1100);
+    y += 32;
+  }
+  return canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+}
 
-    const apiPromise = openai.chat.completions.create({
+// Helper: Convert first page of PDF buffer to PNG base64 (pure JS)
+async function pdfBufferToPngBase64(pdfBuffer: Buffer): Promise<string> {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer) }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2 });
+  const canvas = createCanvas(viewport.width, viewport.height);
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  // @ts-ignore
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+}
+
+// Main extraction function - OpenAI handles everything
+export async function extractPrescriptionData(
+  base64File: string, 
+  mimeType: string, 
+  originalBuffer?: Buffer
+): Promise<ExtractedPrescriptionData> {
+  try {
+    let imageBase64: string;
+    if (mimeType === "application/pdf" && originalBuffer) {
+      imageBase64 = await pdfBufferToPngBase64(originalBuffer);
+    } else if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && originalBuffer) {
+      imageBase64 = await docxBufferToPngBase64(originalBuffer);
+    } else if (mimeType.startsWith("image/")) {
+      imageBase64 = base64File;
+    } else {
+      throw new Error(`Unsupported file type: ${mimeType}`);
+    }
+
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -90,28 +141,63 @@ export async function extractPrescriptionData(base64File: string, mimeType: stri
           content: [
             {
               type: "text",
-              text: "Extract prescription data from this medical document. Return only valid JSON."
+              text: "Extract prescription data from this medical document image. Return only valid JSON."
             },
             {
               type: "image_url",
               image_url: {
-                url: `data:${mimeType};base64,${base64File}`,
+                url: `data:image/png;base64,${imageBase64}`,
                 detail: "high"
               }
             }
           ]
         }
       ],
-      max_tokens: 1500,
+      max_tokens: 2000,
       temperature: 0.1,
       response_format: { type: "json_object" }
     });
 
-    const response = await Promise.race([apiPromise, timeoutPromise]) as any;
-    const extractedData = JSON.parse(response.choices[0].message.content || "{}");
+    if (!response.choices[0]?.message?.content) {
+      throw new Error('OpenAI returned empty response');
+    }
+
+    const extractedData = JSON.parse(response.choices[0].message.content);
     return extractedData as ExtractedPrescriptionData;
   } catch (error: any) {
     throw new Error(`Failed to extract prescription data: ${error.message}`);
+  }
+}
+
+// Fallback function for text-based extraction (useful for DOCX content)
+export async function extractPrescriptionDataFromText(
+  textContent: string
+): Promise<ExtractedPrescriptionData> {
+  try {
+    console.log('Processing text content with OpenAI...');
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system", 
+          content: EXTRACTION_SYSTEM_PROMPT
+        },
+        {
+          role: "user",
+          content: `Extract prescription data from this medical document text. Return only valid JSON.\n\nDocument text:\n${textContent}`
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+      response_format: { type: "json_object" }
+    });
+
+    const extractedData = JSON.parse(response.choices[0].message.content || "{}");
+    return extractedData as ExtractedPrescriptionData;
+    
+  } catch (error: any) {
+    throw new Error(`Failed to extract prescription data from text: ${error.message}`);
   }
 }
 
@@ -125,7 +211,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return response.data[0].embedding;
   } catch (error) {
-    throw new Error(`Failed to generate embedding: ${error.message}`);
+    throw new Error(`Failed to generate embedding: ${(error as any).message}`);
   }
 }
 
@@ -158,7 +244,7 @@ ${userMessage}
 
     return response.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error) {
-    throw new Error(`Failed to generate chat response: ${error.message}`);
+    throw new Error(`Failed to generate chat response: ${(error as any).message}`);
   }
 }
 
@@ -179,4 +265,42 @@ export function buildEmbeddingText(prescriptionData: ExtractedPrescriptionData):
   ].filter(Boolean);
   
   return components.join(' | ');
+}
+
+export async function generateMedicineInfo(medicineName: string): Promise<{ sideEffects: string; warnings: string }> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a medical information assistant. Provide general information about medications in a safe, patient-friendly manner. Always emphasize consulting healthcare providers for specific medical advice. Return only valid JSON with this structure: {"sideEffects": "string", "warnings": "string"}`
+        },
+        {
+          role: "user",
+          content: `Provide general side effects and warnings for the medication: ${medicineName}. Keep responses concise and patient-friendly.`
+        }
+      ],
+      max_tokens: 500,
+      temperature: 0.1,
+      response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('OpenAI returned empty response');
+    }
+
+    const result = JSON.parse(content);
+    return {
+      sideEffects: result.sideEffects || "Information not available. Please consult your healthcare provider.",
+      warnings: result.warnings || "Information not available. Please consult your healthcare provider."
+    };
+  } catch (error: any) {
+    console.error("Error generating medicine info:", error);
+    return {
+      sideEffects: "Information not available. Please consult your healthcare provider.",
+      warnings: "Information not available. Please consult your healthcare provider."
+    };
+  }
 }
